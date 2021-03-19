@@ -1,9 +1,10 @@
-import PathFinder.HelperFile as hf
 import os
 import time
+import ConfigFiles.Config as cfg
+import PathFinder.HelperFile as hf
 
 
-def solve_A_star(root, canvas, nodes_list, folder, pause_solver, draw_node, draw_text, create_frames):
+def solve_A_star(nodes_list, folder, pause_solver, draw_node, draw_text, create_frames):
     frame_nr = -1
     frame_path = os.path.join(folder, "frames")
 
@@ -35,7 +36,7 @@ def solve_A_star(root, canvas, nodes_list, folder, pause_solver, draw_node, draw
         if create_frames == 1:
             hf.create_new_folder(frame_path)
             frame_nr += 1
-            hf.save_canvas(root, canvas, os.path.join(frame_path, "frame" + str(frame_nr).zfill(4) + ".png"))
+            hf.save_canvas(cfg.root, cfg.canvas, os.path.join(frame_path, "frame" + str(frame_nr).zfill(4) + ".png"))
 
         open_set = sorted(open_set, key=lambda x: (x.f, x.h))
 
@@ -84,7 +85,7 @@ def solve_A_star(root, canvas, nodes_list, folder, pause_solver, draw_node, draw
                 temp_node = temp_node.parent
                 if create_frames == 1:
                     frame_nr += 1
-                    hf.save_canvas(root, canvas, os.path.join(frame_path, "frame" + str(frame_nr).zfill(4) + ".png"))
+                    hf.save_canvas(cfg.root, cfg.canvas, os.path.join(frame_path, "frame" + str(frame_nr).zfill(4) + ".png"))
 
             return "Maze Solved Shortest Path: " + str(int(node_current.f))
 
