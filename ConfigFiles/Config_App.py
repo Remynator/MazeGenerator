@@ -46,12 +46,6 @@ def setup_canvas():
     generate_button.config(width=int(width_button), height=int(height_button))
     generate_button.grid(row=4, column=cfg.cols + 3, columnspan=2)
 
-    cfg.file_name_label = Entry(cfg.root)
-    cfg.file_name_label.grid(row=5, column=cfg.cols + 3, columnspan=2)
-    cfg.file_name_label.insert(0, str(datetime.datetime.now().strftime("%Y-%m-%d_%H;%M")))
-    file_name_text = Label(cfg.root, text="Filename")
-    file_name_text.grid(row=5, column=cfg.cols + 1, sticky="w", columnspan=1)
-
     load_maze_button = Button(cfg.root, text="Load Maze", command=load_maze)
     load_maze_button.config(width=int(width_button), height=int(height_button))
     load_maze_button.grid(row=6, column=cfg.cols + 1, columnspan=2)

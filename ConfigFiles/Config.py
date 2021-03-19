@@ -184,7 +184,6 @@ width_label = Entry(root)
 height_label = Entry(root)
 cell_size_label = Entry(root)
 status_bar = Label(root)
-file_name_label = Entry(root)
 
 pause_entry = Entry(root)
 save_var = IntVar()

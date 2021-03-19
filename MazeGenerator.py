@@ -1,9 +1,9 @@
-import pandas as pd
 import os
-import sys
 import time
-import datetime
+import pandas as pd
 import random
+from tkinter import *
+from tkinter import filedialog
 from ConfigFiles import Config as cfg
 import PathFinder.PathFinder as PathFinder
 import PathFinder.HelperFile as HelperFile
@@ -43,17 +43,6 @@ def setup_maze():
     cell_end = cfg.grid[cfg.index(rand_row, cfg.cols - 1)]
     cell_end.end = True
 
-    # radius = math.ceil(cfg.cols * .1) if math.ceil(cfg.cols * .1) <= 4 else 4
-    #
-    # for k in range(-radius, 1):
-    #     m = -radius - k
-    #     while m <= radius + k:
-    #         if 0 <= (rand_row + m) < rows:
-    #             blocked_cell = grid[cfg.index(rand_row + m, cols - 1 + k)]
-    #             blocked_cell.blocked = False
-    #             cfg.cells_blocked.append(blocked_cell)
-    #         m += 1
-
 
 def generate_maze():
     setup_maze()
@@ -69,9 +58,6 @@ def generate_maze():
             cfg.info_label.config(
                 text=str(int(len(cfg.cells_visited) / (cfg.rows * cfg.cols / 1000)) / 10) + "% completed")
             # print(len(cfg.cells_visited) / (cfg.rows * cfg.cols / 100))
-            # if len(cfg.cells_visited) > cfg.rows * cfg.cols * .75:
-            #     for m in range(len(cfg.cells_blocked)):
-            #         cfg.cells_blocked[m].blocked = False
 
             # STEP 1.2
             stack.append(cfg.cell_current)
@@ -88,9 +74,6 @@ def generate_maze():
             cfg.cell_current = stack.pop()
 
         time.sleep(0)
-
-    cfg.file_name_label.delete(0, len(cfg.file_name_label.get()))
-    cfg.file_name_label.insert(0, str(datetime.datetime.now().strftime("%Y-%m-%d_%H;%M")))
 
     cfg.gen_text = "Maze Generated: " + str(cfg.rows) + " R by " + str(cfg.cols) + " C, Cell size: " + str(cfg.cell_size)
     cfg.info_label.config(text=cfg.gen_text, justify="left")
@@ -130,86 +113,139 @@ def resize_maze():
     cfg.canvas.config(width=cfg.width + cfg.border, height=cfg.height + cfg.border, bg="#cccccc")
 
 
+def write_csv_file(file_path):
+
+    f = open(file_path, "w+")
+    # create header
+    f.write("col_nr,row_nr,cell_size,visited,blocked,start,end,wall_top,wall_right,wall_bottom,wall_left\n")
+
+    # loop though all cells
+
+    for i in range(len(cfg.grid)):
+        write_cell = cfg.grid[i]
+        f.write(str(write_cell.i) + "," +
+                str(write_cell.j) + "," +
+                str(write_cell.w) + "," +
+                str(write_cell.visited) + "," +
+                str(write_cell.blocked) + "," +
+                str(write_cell.start) + "," +
+                str(write_cell.end) + "," +
+                str(write_cell.walls[0]) + "," +
+                str(write_cell.walls[1]) + "," +
+                str(write_cell.walls[2]) + "," +
+                str(write_cell.walls[3]) + "\n")
+
+    f.close()
+
+
+def read_csv_file(file_path):
+    df = pd.read_csv(file_path)
+    array = df.to_numpy()
+    cell_list = []
+
+    for i in range(len(array)):
+        # col_nr, row_nr, visited, cell_size, blocked, start, end, wall_top, wall_right, wall_bottom, wall_left
+        cell = cfg.Cell(array[i][0], array[i][1], array[i][2])
+        cell.visited = array[i][3]
+        cell.blocked = array[i][4]
+        cell.start = array[i][5]
+        cell.end = array[i][6]
+        walls = []
+        for j in range(4):
+            walls.append(array[i][7 + j])
+        cell.walls = walls
+
+        cell.is_node = False
+        cell.index_node = None
+        cell.canvas = [None, None, None, None, None]
+
+        cell_list.append(cell)
+
+    return cell_list
+
+
 def save_to_csv():
-    folder_name = cfg.file_name_label.get()
-    folder_path = os.path.join(cfg.root_dir, "Mazes", folder_name)
-    file_name = folder_name + ".csv"
+    initial_dir = os.path.join(cfg.root_dir, "Mazes")
+    file_path = filedialog.asksaveasfilename(defaultextension=".*", initialdir=initial_dir, title="Save as File",
+                                             filetypes=(("csv File", "*.csv"), ("All Files", "*.*")))
+    file_path = file_path.replace("/", "\\")
+    file_name = file_path.replace(os.path.dirname(file_path) + "\\", "")
+
+    folder_path, file_extension = os.path.splitext(file_path)
     file_path = os.path.join(folder_path, file_name)
 
-    if cfg.save_var.get() == 1:
+    if file_name.lower().endswith('.csv'):
+
         try:
             pd.read_csv(file_path)
         except FileNotFoundError:
             HelperFile.create_new_folder(folder_path)
 
-            f = open(file_path, "w+")
-            f.write("col_nr,row_nr,cell_size,visited,blocked,start,end,wall_top,wall_right,wall_bottom,wall_left\n")
+            write_csv_file(file_path)
 
-            for i in range(len(cfg.grid)):
-                write_cell = cfg.grid[i]
-                f.write(str(write_cell.i) + "," + str(write_cell.j) + "," + str(write_cell.w) + "," + str(
-                    write_cell.visited) + "," + str(write_cell.blocked) + "," + str(write_cell.start) + "," + str(
-                    write_cell.end) + "," + str(write_cell.walls[0]) + "," + str(write_cell.walls[1]) + "," + str(
-                    write_cell.walls[2]) + "," + str(write_cell.walls[3]) + "\n")
-
-            f.close()
             cfg.save_text = "\nMaze Saved as: " + file_name
             cfg.info_label.config(text=cfg.gen_text + cfg.save_text, justify="left")
+    else:
+        extension_popup = Toplevel(cfg.root)
+        extension_popup.title("Wrong extension")
+        extension_popup.geometry("250x100")
 
-    return folder_name, folder_path
+        msg = "Please save as .csv file"
+
+        extension_popup_label = Label(extension_popup, text=msg)
+        extension_popup_label.pack(pady=10)
+
+        extension_popup_ok = Button(extension_popup, text="Ok", padx=10, pady=5, command=extension_popup.destroy)
+        extension_popup_ok.pack()
+
+    return folder_path, folder_path
 
 
 def load_maze():
-    try:
-        folder_name = cfg.file_name_label.get()
-        file_name = folder_name + ".csv"
-        file_path = os.path.join(cfg.root_dir, "Mazes", folder_name, file_name)
+    initial_dir = os.path.join(cfg.root_dir, "Mazes")
+    file_path = filedialog.askopenfilename(initialdir=initial_dir, title="Open File", filetypes=(
+        ("csv File", "*.csv"), ("All Files", "*.*")))
 
-        df = pd.read_csv(file_path)
-        array = df.to_numpy()
-        cell_list = []
+    if file_path:
+        file_path = file_path.replace("/", "\\")
+        file_name = file_path.replace(os.path.dirname(file_path) + "\\", "")
 
-        for i in range(len(array)):
-            # col_nr, row_nr, visited, cell_size, blocked, start, end, wall_top, wall_right, wall_bottom, wall_left
-            cell = cfg.Cell(array[i][0], array[i][1], array[i][2])
-            cell.visited = array[i][3]
-            cell.blocked = array[i][4]
-            cell.start = array[i][5]
-            cell.end = array[i][6]
-            walls = []
-            for j in range(4):
-                walls.append(array[i][7 + j])
-            cell.walls = walls
+        folder_path = os.path.dirname(file_path)
+        # file_path = os.path.join(folder_path, file_name)
 
-            cell.is_node = False
-            cell.index_node = None
-            cell.canvas = [None, None, None, None, None]
-
-            cell_list.append(cell)
-
-    except FileNotFoundError:
-        if len(cfg.grid) > 1:
-            cell_list = cfg.grid
+        if file_name.lower().endswith('.csv'):
+            cfg.grid = read_csv_file(file_path)
         else:
-            sys.exit('No Cells')
+            extension_popup = Toplevel(cfg.root)
+            extension_popup.title("Wrong extension")
+            extension_popup.geometry("250x100")
 
-    cfg.canvas.delete("all")
-    draw_all_cells(cell_list)
+            msg = "Please selected a .csv file"
 
-    last_cell = cell_list[len(cell_list) - 1]
-    cfg.width = (last_cell.i + 1) * last_cell.w
-    cfg.height = (last_cell.j + 1) * last_cell.w
+            extension_popup_label = Label(extension_popup, text=msg)
+            extension_popup_label.pack(pady=10)
 
-    cfg.canvas.config(width=cfg.width + cfg.border, height=cfg.height + cfg.border, bg="#cccccc")
+            extension_popup_ok = Button(extension_popup, text="Ok", padx=10, pady=5, command=extension_popup.destroy)
+            extension_popup_ok.pack()
 
-    cell_nodes = find_nodes(cell_list)
-    node_list = connect_nodes(cell_nodes[0], cell_nodes[1])
+        cfg.canvas.delete("all")
+        draw_all_cells(cfg.grid)
 
-    cfg.gen_text = "Maze Generated: " + str(cfg.rows) + " R by " + str(cfg.cols) + " C, Cell size: " + str(cfg.cell_size)
-    cfg.load_text = "\nMaze Loaded: " + str(len(node_list)) + "/" + str(cfg.rows * cfg.cols) + " Nodes"
-    cfg.info_label.config(text=cfg.gen_text + cfg.save_text + cfg.load_text, justify="left")
-    cfg.root.update()
-    return node_list
+        last_cell = cfg.grid[len(cfg.grid) - 1]
+        cfg.width = (last_cell.i + 1) * last_cell.w
+        cfg.height = (last_cell.j + 1) * last_cell.w
+
+        cfg.canvas.config(width=cfg.width + cfg.border, height=cfg.height + cfg.border, bg="#cccccc")
+
+        cell_nodes = find_nodes(cfg.grid)
+        node_list = connect_nodes(cell_nodes[0], cell_nodes[1])
+
+        cfg.gen_text = "Maze Generated: " + str(cfg.rows) + " R by " + str(cfg.cols) + " C, Cell size: " + str(cfg.cell_size)
+        cfg.load_text = "\nMaze Loaded: " + str(len(node_list)) + "/" + str(cfg.rows * cfg.cols) + " Nodes"
+        cfg.info_label.config(text=cfg.gen_text + cfg.save_text + cfg.load_text, justify="left")
+        cfg.root.update()
+
+        return node_list
 
 
 def draw_all_cells(cell_list):
