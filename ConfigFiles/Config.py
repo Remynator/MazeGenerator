@@ -1,6 +1,8 @@
 import os
 import math
 import random
+import subprocess
+from PIL import ImageGrab
 from tkinter import *
 
 
@@ -85,9 +87,9 @@ class Node:
         self.in_open = False
         self.in_closed = False
         self.is_path = False
-        self.f = math.inf  # the cost of the path from the start to end
-        self.g = math.inf  # the cost of the path from the start to node
-        self.h = math.inf  # the cost of the path from the node to end
+        self.f = math.inf              # the cost of the path from the start to end
+        self.g = math.inf              # the cost of the path from the start to node
+        self.h = self.heuristic(None)  # the cost of the path from the node to end
         self.connect = [None, None, None, None]
         self.parent = None
 
@@ -127,52 +129,58 @@ class Node:
         root.update()
         return draw
 
-    def connect_nodes(self):
-        global cell_size
+    def connect_nodes(self, next_node):
         x = self.i * self.w + border
         y = self.j * self.w + border
-        cell_size = self.w
         draw = self.canvas
         canvas.delete(draw[4], draw[5], draw[6], draw[7])
 
-        if self.connect[1] is not None and self.parent is None:
-            next_node = self.connect[1]
+        if self.connect[1] == next_node:  # if self.connect[1] is not None and self.parent is None:
             x_next = next_node.i * next_node.w + border
             y_next = next_node.j * next_node.w + border
-            draw[4] = canvas.create_line(x + cell_size / 2, y + cell_size / 2, x_next + cell_size / 2,
-                                         y_next + cell_size / 2, fill="#ff00ff")
+            draw[4] = canvas.create_line(x + self.w / 2, y + self.w / 2, x_next + self.w / 2,
+                                         y_next + self.w / 2, fill="#ff00ff")
 
-        if self.connect[2] is not None and self.parent is None:
-            next_node = self.connect[2]
+        if self.connect[2] == next_node:  # if self.connect[2] is not None and self.parent is None:
             x_next = next_node.i * next_node.w + border
             y_next = next_node.j * next_node.w + border
-            draw[5] = canvas.create_line(x + cell_size / 2, y + cell_size / 2, x_next + cell_size / 2,
-                                         y_next + cell_size / 2, fill="#ff00ff")
+            draw[5] = canvas.create_line(x + self.w / 2, y + self.w / 2, x_next + self.w / 2,
+                                         y_next + self.w / 2, fill="#ff00ff")
 
-        if self.parent is not None:
-            next_node = self.parent
+        if self.parent == next_node:  # if self.parent is not None:
             x_next = next_node.i * next_node.w + border
             y_next = next_node.j * next_node.w + border
-            draw[6] = canvas.create_line(x + cell_size / 2, y + cell_size / 2, x_next + cell_size / 2,
-                                         y_next + cell_size / 2, fill="#00ffff", width=2)
+            draw[6] = canvas.create_line(x + self.w / 2, y + self.w / 2, x_next + self.w / 2,
+                                         y_next + self.w / 2, fill="#00ffff", width=2)
             # canvas.create_text(x + cell_size / 2, y + cell_size / 2, text=index(next_node.j, next_node.i))
 
-        if self.is_path:
-            next_node = self.parent
+        if self.is_path and self.parent == next_node:
             x_next = next_node.i * next_node.w + border
             y_next = next_node.j * next_node.w + border
-            draw[7] = canvas.create_line(x + cell_size / 2, y + cell_size / 2, x_next + cell_size / 2,
-                                         y_next + cell_size / 2, fill="#0000ff", width=2)
+            draw[7] = canvas.create_line(x + self.w / 2, y + self.w / 2, x_next + self.w / 2,
+                                         y_next + self.w / 2, fill="#0000ff", width=2)
 
         root.update()
         return draw
+
+    def distance(self, node_b):
+        return math.sqrt((self.i - node_b.i) ** 2 + (self.j - node_b.j) ** 2) * 10
+
+    def heuristic(self, node_b):
+        if node_b is None:
+            return 0
+        else:
+            h = (abs(self.i - node_b.i) + abs(self.j - node_b.j)) * 10
+            # h = int(math.sqrt((node_a.i - node_b.i) ** 2 + (node_a.j - node_b.j) ** 2) * 10)
+            return h
 
 
 root_dir = ""
 
 root = Tk()
 rows, cols, cell_size, border = 0, 0, 0, 0
-width, height, grid = 0, 0, []
+width, height, grid, node_list = 0, 0, [], []
+maze_path, maze_name = False, False
 cell_current = None
 cells_visited, cells_blocked = [], []
 gen_text, save_text, load_text, solve_maze_text = "", "", "", ""
@@ -196,7 +204,8 @@ save_box = Checkbutton(root)
 def init():
     global root_dir
     global width, height, cell_size, border
-    global rows, cols, grid
+    global rows, cols, grid, node_list
+    global maze_name
     global cells_visited, cells_blocked
     global cell_current
     global gen_text, save_text, load_text, solve_maze_text
@@ -208,7 +217,8 @@ def init():
 
     rows = int(height / cell_size)
     cols = int(width / cell_size)
-    grid = []
+    grid, node_list = [], []
+    maze_name = ""
 
     cell_current = None
     cells_visited = []
@@ -222,3 +232,28 @@ def init():
 
 def index(row, col):
     return row * cols + col
+
+
+def draw_all_cells(cell_list):
+    for i in range(len(cell_list)):
+        cell = cell_list[i]
+        cell.draw_cell()
+
+
+def save_canvas(widget, filename):
+    x = root.winfo_rootx() + widget.winfo_x()
+    y = root.winfo_rooty() + widget.winfo_y()
+    x1 = x + widget.winfo_width()
+    y1 = y + widget.winfo_height()
+    ImageGrab.grab().crop((x, y, x1, y1)).save(filename)
+
+
+def convert_seq_to_mov():
+    input_path = os.path.join("frames", "frame%04d.png")
+    output_path = os.path.join("video.mp4")
+    frame_rate = 6
+    cmd = f'ffmpeg -framerate {frame_rate} -i "{input_path}" "{output_path}"'
+    t = False
+    if t:
+        subprocess.check_output(cmd, shell=True)
+    return cmd
