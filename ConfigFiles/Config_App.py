@@ -1,10 +1,11 @@
-import datetime
 from tkinter import *
 from ConfigFiles import Config as cfg
 
 
 def setup_canvas():
-    from MazeGenerator import resize_maze, generate_maze, load_maze, save_to_csv, solve_maze
+    from MazeGenerator import new_maze, resize_maze
+    from PathFinder import solve_maze
+    from Menu.FileMenu import file_menu_open, file_menu_save, file_menu_save_as, file_menu_close
 
     cfg.root.title("Maze Generator")
     # cfg.root.state("zoomed")
@@ -36,24 +37,6 @@ def setup_canvas():
     height_text.grid(row=2, column=cfg.cols + 1, columnspan=1, sticky="w")
     cell_size_text.grid(row=3, column=cfg.cols + 1, columnspan=1, sticky="w")
 
-    # TODO convert buttons to menu
-
-    resize_maze_button = Button(cfg.root, text="Resize Maze", command=resize_maze)
-    resize_maze_button.config(width=int(width_button), height=int(height_button))
-    resize_maze_button.grid(row=4, column=cfg.cols + 1, columnspan=2)
-
-    generate_button = Button(cfg.root, text="Generate New Maze", command=generate_maze)
-    generate_button.config(width=int(width_button), height=int(height_button))
-    generate_button.grid(row=4, column=cfg.cols + 3, columnspan=2)
-
-    load_maze_button = Button(cfg.root, text="Load Maze", command=load_maze)
-    load_maze_button.config(width=int(width_button), height=int(height_button))
-    load_maze_button.grid(row=6, column=cfg.cols + 1, columnspan=2)
-
-    save_button = Button(cfg.root, text="Save Maze", command=save_to_csv)
-    save_button.config(width=int(width_button), height=int(height_button))
-    save_button.grid(row=6, column=cfg.cols + 3, columnspan=2)
-
     pause_label = Label(cfg.root, text="Pause")
     pause_label.grid(row=7, column=cfg.cols + 1, sticky="w")
     cfg.pause_entry = Entry(cfg.root)
@@ -74,10 +57,24 @@ def setup_canvas():
     draw_nodes_box.grid(row=9, column=cfg.cols + 1, columnspan=2, sticky="w")
     draw_text_box.grid(row=9, column=cfg.cols + 3, columnspan=2, sticky="w")
 
-    solve_maze_button = Button(cfg.root, text="Solve Maze", command=solve_maze)
-    solve_maze_button.config(width=int(width_button), height=int(height_button))
-    solve_maze_button.grid(row=10, column=cfg.cols + 1, columnspan=2)
+    # creating menu-bar
+    menu_bar = Menu(cfg.frame)
 
-    exit_button = Button(cfg.root, text="Exit", command=cfg.root.destroy)
-    exit_button.config(width=int(width_button), height=int(height_button))
-    exit_button.grid(row=10, column=cfg.cols + 3, columnspan=2)
+    file_menu = Menu(menu_bar, tearoff=0)
+    menu_bar.add_cascade(label="File", menu=file_menu)
+    file_menu.add_command(label="New", command=new_maze)
+    file_menu.add_command(label="Open", command=file_menu_open)
+    file_menu.add_command(label="Save", command=file_menu_save)
+    file_menu.add_command(label="Save as...", command=file_menu_save_as)
+    file_menu.add_command(label="Close", command=file_menu_close)
+    file_menu.add_separator()
+    file_menu.add_command(label="Exit", command=cfg.root.quit)
+
+    edit_menu = Menu(menu_bar, tearoff=0)
+    menu_bar.add_cascade(label="Edit", menu=edit_menu)
+    edit_menu.add_command(label="Resize Maze", command=resize_maze)
+    edit_menu.add_separator()
+    edit_menu.add_command(label="Solve Maze", command=solve_maze)
+
+    cfg.root.config(menu=menu_bar)
+
