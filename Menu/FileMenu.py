@@ -128,37 +128,39 @@ def file_menu_save_as():
     initial_dir = os.path.join(cfg.root_dir, "Mazes")
     file_path = filedialog.asksaveasfilename(defaultextension=".*", initialdir=initial_dir, title="Save as File",
                                              filetypes=(("csv File", "*.csv"), ("All Files", "*.*")))
-    file_path = file_path.replace("/", "\\")
-    file_name = file_path.replace(os.path.dirname(file_path) + "\\", "")
 
-    cfg.maze_path = file_path
-    cfg.maze_name = file_name
-    folder_path, file_extension = os.path.splitext(file_path)
-    file_path = os.path.join(folder_path, file_name)
+    if file_path:
+        file_path = file_path.replace("/", "\\")
+        file_name = file_path.replace(os.path.dirname(file_path) + "\\", "")
 
-    if file_name.lower().endswith('.csv'):
+        cfg.maze_path = file_path
+        cfg.maze_name = file_name
+        folder_path, file_extension = os.path.splitext(file_path)
+        file_path = os.path.join(folder_path, file_name)
 
-        try:
-            pd.read_csv(file_path)
-        except FileNotFoundError:
-            create_new_folder(folder_path)
+        if file_name.lower().endswith('.csv'):
+
+            try:
+                pd.read_csv(file_path)
+            except FileNotFoundError:
+                create_new_folder(folder_path)
 
             write_csv_file(file_path)
 
             cfg.save_text = "\nMaze Saved as: " + cfg.maze_name
             cfg.info_label.config(text=cfg.gen_text + cfg.save_text, justify="left")
-    else:
-        extension_popup = Toplevel(cfg.root)
-        extension_popup.title("Wrong extension")
-        extension_popup.geometry("250x100")
+        else:
+            extension_popup = Toplevel(cfg.root)
+            extension_popup.title("Wrong extension")
+            extension_popup.geometry("250x100")
 
-        msg = "Please save as .csv file"
+            msg = "Please save as .csv file"
 
-        extension_popup_label = Label(extension_popup, text=msg)
-        extension_popup_label.pack(pady=10)
+            extension_popup_label = Label(extension_popup, text=msg)
+            extension_popup_label.pack(pady=10)
 
-        extension_popup_ok = Button(extension_popup, text="Ok", padx=10, pady=5, command=extension_popup.destroy)
-        extension_popup_ok.pack()
+            extension_popup_ok = Button(extension_popup, text="Ok", padx=10, pady=5, command=extension_popup.destroy)
+            extension_popup_ok.pack()
 
 
 def file_menu_close():
