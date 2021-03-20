@@ -54,8 +54,8 @@ def connect_nodes():
 def solve_A_star(pause_solver, draw_node, draw_text, create_frames):
     from Menu.FileMenu import create_new_folder
 
-    frame_path = os.path.join(os.path.dirname(cfg.maze_path), "Frames")
     frame_nr = -1
+    frame_path = os.path.join(os.path.dirname(cfg.maze_path), "Frames") if create_frames == 1 else None
 
     open_set = []
     closed_set = []
@@ -137,8 +137,9 @@ def solve_A_star(pause_solver, draw_node, draw_text, create_frames):
                     cfg.save_canvas(cfg.canvas, os.path.join(frame_path, "frame" + str(frame_nr).zfill(4) + ".png"))
 
             for k in range(12):
-                frame_nr += 1
-                cfg.save_canvas(cfg.canvas, os.path.join(frame_path, "frame" + str(frame_nr).zfill(4) + ".png"))
+                if create_frames == 1:
+                    frame_nr += 1
+                    cfg.save_canvas(cfg.canvas, os.path.join(frame_path, "frame" + str(frame_nr).zfill(4) + ".png"))
 
             return "Maze Solved Shortest Path: " + str(int(node_current.f))
 
@@ -166,12 +167,15 @@ def solve_maze():
     is_movie = cfg.movie_var.get()
 
     file_menu_save()
-    file_path, file_extension = os.path.splitext(cfg.maze_path)
-    cfg.save_canvas(cfg.canvas, file_path + ".png")
 
-    solve_maze_text = solve_A_star(pause_val, is_draw_nodes, is_draw_text, is_movie)
+    if cfg.maze_path:
+        file_path, file_extension = os.path.splitext(cfg.maze_path)
 
-    cfg.save_canvas(cfg.canvas, file_path + "_solved.png")
+        cfg.save_canvas(cfg.canvas, file_path + ".png")
+        solve_maze_text = solve_A_star(pause_val, is_draw_nodes, is_draw_text, is_movie)
+        cfg.save_canvas(cfg.canvas, file_path + "_solved.png")
+    else:
+        solve_maze_text = solve_A_star(pause_val, is_draw_nodes, is_draw_text, create_frames=0)
 
     cfg.info_label.config(text=cfg.gen_text + cfg.save_text + cfg.load_text + "\n" + solve_maze_text, justify="left")
     cfg.save_box.deselect()
